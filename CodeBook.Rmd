@@ -1,0 +1,83 @@
+---
+title: "Codebook"
+author: "fleschgordon"
+date: "8 Juni 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, include=FALSE}
+load(file="dtActivityMean.RData")
+load(file="dtActivityLabels.RData")
+```
+
+This is Codebook a describes the variables, the data, and any transformations or work, which is in the `run_analysis.R` to clean up and aggregate the data to produce the end result the `ActivityMean.txt`
+:
+
+##Data
+The input data is downloaded for this url "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+and contains Samsung Galaxy S smartphone activity tracking data.
+the following files were used:
+
+* ActivityLabels from  `/test/y_test.txt` and `/train/y_train.txt`
+* Activities from `/test/X_test.txt` and `/train/X_train.txt`
+* Subjects from `/test/subject_test.txt` and `/train/subject_train.txt`
+* Features from `/features.txt`
+
+##Transformation steps
+All dataset uses `data.tables` because of flexibility and performance.
+
+1. Merges the training and the test sets to create one data set.
+```{r, eval=FALSE, include=TRUE}
+dtActivity <- rbind(dtActivityTrain, dtActivityTest)
+```
+
+2. Extracts only the measurements on the mean and standard deviation for each measurement.
+```{r, eval=FALSE, include=TRUE}
+#only mean or std features
+dtFeaturesFinal <- dtFeatures[grep("mean|std", dtFeatures$featureName), ]
+dtFeaturesFinal$featureName <- gsub('-mean', 'Mean', dtFeaturesFinal$featureName)
+dtFeaturesFinal$featureName <- gsub('-std', 'Std', dtFeaturesFinal$featureName)
+dtFeaturesFinal$featureName <- gsub('[-()]', '', dtFeaturesFinal$featureName)
+```
+
+3. Uses descriptive activity names to name the activities in the data set
+```{r, eval=FALSE, include=TRUE}
+dtActivityFinal <- merge(dtActivityFinal, dtActivityLabels, by= "activityID", all.x = TRUE)
+```
+
+4. Appropriately labels the data set with descriptive variable names.
+```{r, eval=FALSE, include=TRUE}
+setnames(dtActivityLabels, names(dtActivityLabels), c("activityID", "activityName"))
+```
+```{r, echo=TRUE}
+dtActivityLabels
+```
+
+5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+```{r, eval=FALSE, include=TRUE}
+dtActivityMean <- dcast(dtActivityTidyFinal, subjectID + activityID ~ featureName, mean)
+write.table(dtActivityMean, "./data/ActivityMean.txt", row.names = FALSE, quote = FALSE)
+```
+
+
+
+##Result File ActivityMean.txt
+###Keys
+* subjectID : ID of the subject
+* activityID : ID of the activity
+
+###Structure
+* Keys
+* Measurements
+
+
+```{r str(dtActivityMean), echo=TRUE}
+str(dtActivityMean)
+```
+
+
+
